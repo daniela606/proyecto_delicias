@@ -63,8 +63,15 @@ function addToCart(id,nombre,precio){
 }
 function renderCart(){
   const itemsEl = document.getElementById('items');
-  if(!itemsEl) return;
   const cart = getCart();
+  // actualizar badge y total del botón de pedido (si existen)
+  const badge = document.getElementById('orderBadge');
+  const orderTotalEl = document.getElementById('orderTotal');
+  const itemCount = cart.reduce((s,i)=>s+Number(i.cantidad||0),0);
+  const totalCalc = cart.reduce((s,i)=>s + (Number(i.precio||0) * Number(i.cantidad||0)), 0);
+  if(badge){ if(itemCount>0){ badge.style.display='inline-block'; badge.innerText = itemCount; } else { badge.style.display='none'; } }
+  if(orderTotalEl){ orderTotalEl.innerText = '$' + totalCalc.toFixed(2); }
+  if(!itemsEl) return;
   itemsEl.innerHTML = '';
   let total=0;
   cart.forEach((it, idx)=>{
@@ -162,3 +169,20 @@ function initMenuForMesa(mesa){
 
 
 function goToCart(){ location.href = 'mesa.html?mesa=1'; }
+
+// Modal handlers for viewing the pedido
+(function(){
+  const btn = document.getElementById('btnViewOrder');
+  const modal = document.getElementById('orderModal');
+  const close = document.getElementById('closeModal');
+  if(btn && modal){
+    btn.onclick = ()=>{ modal.setAttribute('aria-hidden','false'); renderCart(); };
+  }
+  if(close && modal){
+    close.onclick = ()=>{ modal.setAttribute('aria-hidden','true'); };
+  }
+  // cerrar al hacer click fuera
+  window.addEventListener('click', (e)=>{ if(e.target === modal) modal.setAttribute('aria-hidden','true'); });
+  // cerrar con ESC
+  window.addEventListener('keyup', (e)=>{ if(e.key === 'Escape' && modal && modal.getAttribute('aria-hidden')==='false') modal.setAttribute('aria-hidden','true'); });
+})();
