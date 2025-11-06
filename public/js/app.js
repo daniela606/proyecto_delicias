@@ -1,0 +1,164 @@
+
+async function api(path, opts){
+  const res = await fetch('/api' + path, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
+  if(!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+
+if(document.getElementById('btnLogin')){
+  document.getElementById('btnLogin').onclick = async ()=>{
+    const usuario = document.getElementById('usuario').value;
+    const password = document.getElementById('password').value;
+    try{
+      const u = await api('/login',{method:'POST',body:JSON.stringify({usuario,password})});
+      localStorage.setItem('user', JSON.stringify(u));
+      location.href = 'mesas.html';
+    }catch(e){
+      document.getElementById('msg').innerText = 'Usuario o contraseña incorrecta';
+    }
+  }
+}
+
+
+async function loadProducts(renderTargetId, showAdd=true){
+  const container = document.getElementById(renderTargetId);
+  if(!container) return;
+  const prods = await api('/products');
+  container.innerHTML = '';
+  prods.forEach(p=>{
+    const div = document.createElement('div');
+    div.className='producto';
+    div.innerHTML = `<img src="${p.imagen||'https://via.placeholder.com/200x100'}"><h4>${p.nombre}</h4>
+      <div>$ ${Number(p.precio).toFixed(2)}</div>
+      ${showAdd?`<div><input type="number" min="1" value="1" id="q_${p.id}" style="width:60px"><button class="btn" onclick="addToCart(${p.id},'${p.nombre}',${p.precio})">Agregar</button></div>`:''}`;
+    container.appendChild(div);
+  });
+}
+
+
+function getCart(){ return JSON.parse(localStorage.getItem('cart')||'[]'); }
+function saveCart(c){ localStorage.setItem('cart', JSON.stringify(c)); }
+function addToCart(id,nombre,precio){
+  const q = Number(document.getElementById('q_'+id)?.value || 1);
+  const cart = getCart();
+  const idx = cart.findIndex(x=>x.id_producto==id);
+  if(idx>=0) cart[idx].cantidad += q; else cart.push({id_producto:id,nombre,cantidad:q,precio,observacion:''});
+  saveCart(cart);
+  renderCart();
+  // Intentar persistir inmediatamente en la mesa (si conocemos la mesa)
+  try{
+    // Determinar mesa: buscar parámetro ?mesa= en la URL, o usar localStorage 'currentMesa', o por defecto '1'
+    const urlParams = new URLSearchParams(window.location.search);
+    const mesa = urlParams.get('mesa') || localStorage.getItem('currentMesa') || '1';
+    const user = JSON.parse(localStorage.getItem('user')||'{}');
+    // Llamada al endpoint que crea/usa pedido pendiente y añade el detalle
+    api(`/mesa/${mesa}/items`, {method:'POST', body: JSON.stringify({id_producto:id, cantidad:q, observacion:'', id_usuario: user.id || null})})
+      .then(resp=>{
+        console.log('Persistido en mesa', mesa, resp);
+      }).catch(err=>{
+        console.warn('No se pudo persistir en mesa (se guardó localmente):', err.message);
+      });
+  }catch(e){ console.warn('Error persistiendo item en mesa', e.message); }
+}
+function renderCart(){
+  const itemsEl = document.getElementById('items');
+  if(!itemsEl) return;
+  const cart = getCart();
+  itemsEl.innerHTML = '';
+  let total=0;
+  cart.forEach((it, idx)=>{
+    const div = document.createElement('div'); div.className='item';
+    // si el item viene de la BD tendrá detalleId
+    const detalleId = it.detalleId || it.id || null;
+    div.innerHTML = `<div style="flex:1"><strong>${it.nombre}</strong><div class="small">$${Number(it.precio).toFixed(2)}</div></div>`;
+    const controls = document.createElement('div'); controls.style.display='flex'; controls.style.gap='8px'; controls.style.alignItems='center';
+    const qty = document.createElement('input'); qty.type='number'; qty.min=1; qty.value = it.cantidad; qty.style.width='60px';
+    qty.onchange = async ()=>{
+      const newQ = Number(qty.value);
+      if(isNaN(newQ) || newQ<1) { qty.value = it.cantidad; return; }
+      // actualizar local
+      const c = getCart(); c[idx].cantidad = newQ; saveCart(c);
+      // si tiene detalleId, persistir cambio en servidor
+      if(detalleId){
+        try{
+          await api(`/mesa/${localStorage.getItem('currentMesa')}/items/${detalleId}`, {method:'PATCH', body: JSON.stringify({cantidad:newQ, observacion:c[idx].observacion||''})});
+        }catch(e){ console.warn('No se pudo actualizar cantidad en servidor', e.message); }
+      }
+      renderCart();
+    };
+    const delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.innerText='Eliminar';
+    delBtn.onclick = async ()=>{
+      if(!confirm('Eliminar item?')) return;
+      // eliminar local
+      const c = getCart();
+      const removed = c.splice(idx,1)[0];
+      saveCart(c);
+      // si tiene detalleId, eliminar en servidor
+      if(detalleId){
+        try{
+          await api(`/mesa/${localStorage.getItem('currentMesa')}/items/${detalleId}`, {method:'DELETE'});
+        }catch(e){ console.warn('No se pudo eliminar en servidor', e.message); }
+      }
+      renderCart();
+    };
+    controls.appendChild(qty);
+    controls.appendChild(delBtn);
+    div.appendChild(controls);
+    itemsEl.appendChild(div);
+    total += Number(it.precio) * Number(it.cantidad);
+  });
+  document.getElementById('total').innerText = total.toFixed(2);
+}
+
+if(document.getElementById('productos')) loadProducts('productos');
+if(document.getElementById('featured')) loadProducts('featured', false);
+if(document.getElementById('items')) renderCart();
+
+function initMenuForMesa(mesa){
+  loadProducts('productos', true);
+  renderCart();
+  // marcar mesa actual en localStorage para que addToCart pueda persistir automáticamente
+  try{ localStorage.setItem('currentMesa', String(mesa)); }catch(e){}
+  // sincronizar con la mesa pendiente en el servidor: traer items y mezclarlos al carrito local
+  (async function syncMesa(){
+    try{
+      const resp = await api(`/mesa/${mesa}`);
+      if(resp && resp.items && resp.items.length){
+        const local = getCart();
+        // por cada item del servidor, añadir/mergear en local
+        resp.items.forEach(it=>{
+          const idx = local.findIndex(x=>x.id_producto==it.id_producto);
+          const precio = Number(it.precio || 0);
+          if(idx>=0){
+            local[idx].cantidad = Number(local[idx].cantidad) + Number(it.cantidad);
+          } else {
+            local.push({id_producto: it.id_producto, nombre: it.nombre || '', cantidad: it.cantidad, precio: precio, observacion: it.observacion || ''});
+          }
+        });
+        saveCart(local);
+        renderCart();
+      }
+    }catch(e){
+      console.warn('No se pudo sincronizar la mesa:', e.message || e);
+    }
+  })();
+  document.getElementById('send').onclick = async ()=>{
+    const user = JSON.parse(localStorage.getItem('user')||'{"id":1}');
+    const cart = getCart();
+    if(cart.length===0){ alert('Añade productos'); return; }
+    const items = cart.map(i=>({id_producto:i.id_producto,cantidad:i.cantidad,observacion:i.observacion}));
+    try{
+      const resp = await api('/orders',{method:'POST',body:JSON.stringify({id_usuario:user.id, mesa:mesa, observaciones:'', items})});
+      localStorage.removeItem('cart');
+      try{ localStorage.removeItem('currentMesa'); }catch(e){}
+      alert('Pedido enviado id: '+resp.idPedido);
+      location.href='mesas.html';
+    }catch(e){
+      alert('Error: '+e.message);
+    }
+  }
+}
+
+
+function goToCart(){ location.href = 'mesa.html?mesa=1'; }

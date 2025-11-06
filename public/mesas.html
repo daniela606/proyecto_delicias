@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mesas</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-orange">
+  <header><a href="index.html">← Inicio</a> <h2>MESAS</h2></header>
+  <div class="mesas-grid" id="mesasGrid"></div>
+
+  <script>
+    const grid = document.getElementById('mesasGrid');
+    async function loadMesas(){
+      try{
+        const res = await fetch('/api/mesas');
+        const mesas = await res.json();
+        grid.innerHTML = '';
+        mesas.forEach(m=>{
+          const el = document.createElement('div');
+          el.className = 'mesa';
+          el.innerHTML = `
+            <img src="imagenes/mesas.png" alt="Mesa ${m.id}" class="mesa-img">
+            <div>MESA ${m.id}</div>
+            <div class="small">${m.tienePendiente? 'Pendiente: $'+Number(m.total).toFixed(2) : 'Libre'}</div>
+            <button onclick="openMesa(${m.id})">Abrir</button>`;
+          grid.appendChild(el);
+        });
+      }catch(e){
+        grid.innerHTML = '<div>Error cargando mesas</div>';
+      }
+    }
+    function openMesa(m){ location.href = `mesa.html?mesa=${m}`; }
+    loadMesas();
+  </script>
+</body>
+</html>

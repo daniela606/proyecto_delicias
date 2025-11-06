@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mesa</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body class="bg-orange">
+  <header><a href="mesas.html">← Mesas</a> <h2 id="titleMesa">MESA</h2></header>
+  <div id="productos" class="productos-grid"></div>
+  <div class="cart-sidebar" id="cart">
+    <h3>Pedido</h3>
+    <div id="items"></div>
+    <div>Total: $<span id="total">0.00</span></div>
+    <button id="send" class="btn">Enviar pedido</button>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const mesa = params.get('mesa') || 1;
+    document.getElementById('titleMesa').innerText = 'MESA ' + mesa;
+    initMenuForMesa(mesa);
+  </script>
+</body>
+</html>
