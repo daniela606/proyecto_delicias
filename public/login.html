@@ -87,14 +87,20 @@
 </head>
 <body>
   <div class="card">
-    <h2>🍔 Iniciar Sesión</h2>
+    <h2>Iniciar Sesión</h2>
     <input id="usuario" placeholder="Usuario" autocomplete="off">
     <input id="password" type="password" placeholder="Contraseña">
     <button id="btnLogin" class="btn">Entrar</button>
+    <button id="btnRegister" class="btn" style="background:#fff;color:#ff6b2d;border:2px solid #ff6b2d;margin-top:10px;">Registrarse</button>
     <p id="msg" class="msg"></p>
   </div>
 
   <script src="js/app.js"></script>
+  <script>
+    // Botón para ir a la página de registro
+    const regBtn = document.getElementById('btnRegister');
+    if(regBtn) regBtn.onclick = () => { window.location.href = '/registro.html'; };
+  </script>
 </body>
 </html>
 

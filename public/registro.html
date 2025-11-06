@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro | Delicias</title>      
+<link rel="stylesheet" href="css/estilos.css">
+<style>
+    body {
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #ff9f43, #ff6b6b);
+        height: 100vh;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        width: 100%;
+        max-width: 350px;
+        padding: 40px 30px;
+        text-align: center;
+        animation: fadeIn 0.7s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    h2 {
+        margin-bottom: 25px;
+        color: #ff6b2d;
+        font-size: 1.6rem;
+        letter-spacing: 1px;
+    }
+    
+    input {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        outline: none;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+    
+    input:focus {
+        border-color: #ff6b2d;
+        box-shadow: 0 0 5px rgba(255, 107, 45, 0.3);
+    }
+    
+    .btn {
+        background: #ff6b2d;
+        color: #fff;
+        border: none;
+        padding: 12px;
+        width: 100%;
+        border-radius: 8px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.3s ease;
+        margin-top: 15px;
+    }
+    
+    .btn:hover {
+        background: #ff3b1f;
+    }    
+</style>
+</head> 
+<body>
+    <div class="card">
+        <h2>Registro de Usuario</h2>
+        <form id="registroForm">
+            <input type="text" id="nombre" placeholder="Nombre Completo" required>
+            <input type="email" id="email" placeholder="Correo Electrónico" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button type="submit" class="btn">Registrarse</button>
+        </form>
+        <p class="msg" id="msg"></p>
+    </div>
+
+    <script>
+        const form = document.getElementById('registroForm');
+        const msg = document.getElementById('msg');
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            msg.innerText = '';
+            const nombre = document.getElementById('nombre').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            if (!nombre || !email || !password) return msg.innerText = 'Completa todos los campos';
+            const btn = form.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = 'Registrando...';
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, usuario: email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Error en el registro');
+                msg.style.color = 'green';
+                msg.innerText = 'Registro exitoso. Redirigiendo al login...';
+                setTimeout(() => window.location.href = '/login.html', 1200);
+                form.reset();
+            } catch (err) {
+                msg.style.color = 'crimson';
+                msg.innerText = err.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Registrarse';
+            }
+        });
+    </script>
+

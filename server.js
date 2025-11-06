@@ -27,6 +27,23 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Registrar nuevo usuario
+app.post('/api/register', async (req, res) => {
+  const { nombre, usuario, password } = req.body;
+  if (!nombre || !usuario || !password) return res.status(400).json({ error: 'nombre, usuario y password son requeridos' });
+  try {
+    const [exists] = await pool.query('SELECT id FROM usuario WHERE usuario=? LIMIT 1', [usuario]);
+    if (exists.length > 0) return res.status(409).json({ error: 'El usuario ya existe' });
+    const hash = await bcrypt.hash(password, 10);
+  // rol debe coincidir con los valores permitidos en la base (ADMIN, MESERO, COCINA)
+  const defaultRole = 'MESERO';
+  const [r] = await pool.query('INSERT INTO usuario (nombre, usuario, password, rol) VALUES (?,?,?,?)', [nombre, usuario, hash, defaultRole]);
+    res.json({ id: r.insertId, nombre, usuario });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 app.get('/api/products', async (req, res) => {
   try {
