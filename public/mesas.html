@@ -255,14 +255,16 @@
   </div>
 
   <script>
-    const grid = document.getElementById('mesasGrid');
+    // NO usar una variable global grid, hacerlo más robusta
     
     // Verificar que el usuario esté logueado
     (function checkUserRole(){
       const user = JSON.parse(localStorage.getItem('user') || '{}');
+      console.log('Usuario logueado:', user);
       
       // Si NO hay usuario logueado, redirigir a login
       if (!user.id) {
+        console.warn('No hay usuario logueado, redirigiendo a login...');
         location.href = 'login.html';
         return;
       }
@@ -276,11 +278,21 @@
     
     async function loadMesas(){
       try{
+        const gridElement = document.getElementById('mesasGrid');
+        if (!gridElement) {
+          console.error('❌ No se encontró el elemento mesasGrid');
+          return;
+        }
+        
+        console.log('loadMesas() called - Fetching /api/mesas...');
         const res = await fetch('/api/mesas');
+        console.log('Response status:', res.status);
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
         const mesas = await res.json();
+        console.log('Mesas recibidas:', mesas);
         if(!Array.isArray(mesas)) throw new Error('Respuesta inválida: no es un array');
-        grid.innerHTML = '';
+        
+        gridElement.innerHTML = '';
         mesas.forEach(m=>{
           const el = document.createElement('div');
           el.className = 'mesa';
@@ -293,12 +305,15 @@
             <div class="mesa-numero">MESA ${m.id}</div>
             <div class="mesa-estado ${estadoClass}">${estado}</div>
             <button onclick="openMesa(${m.id})">Abrir Mesa</button>`;
-          grid.appendChild(el);
+          gridElement.appendChild(el);
         });
-        console.log(`Cargadas ${mesas.length} mesas correctamente`);
+        console.log(`✅ Cargadas ${mesas.length} mesas correctamente`);
       }catch(e){
-        console.error('Error en loadMesas:', e);
-        grid.innerHTML = '<div style="color: white; text-align: center; padding: 20px;">Error cargando mesas: ' + e.message + '</div>';
+        console.error('❌ Error en loadMesas:', e);
+        const gridElement = document.getElementById('mesasGrid');
+        if (gridElement) {
+          gridElement.innerHTML = '<div style="color: white; text-align: center; padding: 20px;">Error cargando mesas: ' + e.message + '</div>';
+        }
       }
     }
 

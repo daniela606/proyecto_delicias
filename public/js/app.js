@@ -214,17 +214,27 @@ function initMenuForMesa(mesa){
     if(cart.length===0){ alert('Añade productos'); return; }
     const mesa = new URLSearchParams(window.location.search).get('mesa') || localStorage.getItem('currentMesa') || '1';
     try{
+      // Deshabilitar botón para evitar múltiples clicks
+      const btn = document.getElementById('send');
+      btn.disabled = true;
+      btn.innerText = 'Enviando a cocina...';
+      
       // Solo cambiar el estado del pedido a PREPARANDO
       const resp = await api(`/mesa/${mesa}/enviar-cocina`, {method:'POST'});
       console.log('Respuesta enviar-cocina:', resp);
       localStorage.removeItem('cart');
       try{ localStorage.removeItem('currentMesa'); }catch(e){}
-      // Esperar un poco antes de redirigir
-      setTimeout(() => {
-        location.href='mesas.html';
-      }, 300);
+      
+      // Esperar un poco para asegurar que se guardó en la BD
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Redirigir a mesas.html
+      window.location.href='mesas.html';
     }catch(e){
       alert('Error: '+e.message);
+      const btn = document.getElementById('send');
+      btn.disabled = false;
+      btn.innerText = 'Enviar a Cocina';
     }
   }
 }
