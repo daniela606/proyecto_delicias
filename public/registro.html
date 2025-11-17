@@ -6,9 +6,14 @@
 <title>Registro | Delicias</title>      
 <link rel="stylesheet" href="css/estilos.css">
 <style>
+    :root {
+      --orange: #f07a0a;
+      --orange-dark: #d96a00;
+    }
+    
     body {
         font-family: 'Poppins', sans-serif;
-        background: linear-gradient(135deg, #ff9f43, #ff6b6b);
+        background: linear-gradient(135deg, var(--orange), var(--orange-dark));
         height: 100vh;
         margin: 0;
         display: flex;
@@ -21,7 +26,7 @@
         border-radius: 16px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         width: 100%;
-        max-width: 350px;
+        max-width: 380px;
         padding: 40px 30px;
         text-align: center;
         animation: fadeIn 0.7s ease-in-out;
@@ -34,12 +39,12 @@
     
     h2 {
         margin-bottom: 25px;
-        color: #ff6b2d;
+        color: var(--orange);
         font-size: 1.6rem;
         letter-spacing: 1px;
     }
     
-    input {
+    input, select {
         width: 100%;
         padding: 12px;
         margin: 10px 0;
@@ -48,15 +53,16 @@
         outline: none;
         font-size: 0.95rem;
         transition: all 0.2s ease;
+        box-sizing: border-box;
     }
     
-    input:focus {
-        border-color: #ff6b2d;
-        box-shadow: 0 0 5px rgba(255, 107, 45, 0.3);
+    input:focus, select:focus {
+        border-color: var(--orange);
+        box-shadow: 0 0 5px rgba(240, 122, 10, 0.3);
     }
     
     .btn {
-        background: #ff6b2d;
+        background: var(--orange);
         color: #fff;
         border: none;
         padding: 12px;
@@ -66,23 +72,53 @@
         cursor: pointer;
         transition: background 0.3s ease;
         margin-top: 15px;
+        font-weight: bold;
     }
     
     .btn:hover {
-        background: #ff3b1f;
-    }    
+        background: var(--orange-dark);
+    }
+    
+    .msg {
+        margin-top: 15px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .back-link {
+        margin-top: 15px;
+    }
+    
+    .back-link a {
+        color: var(--orange);
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+    
+    .back-link a:hover {
+        text-decoration: underline;
+    }
 </style>
 </head> 
 <body>
     <div class="card">
-        <h2>Registro de Usuario</h2>
+        <h2>👤 Registro de Usuario</h2>
         <form id="registroForm">
             <input type="text" id="nombre" placeholder="Nombre Completo" required>
-            <input type="email" id="email" placeholder="Correo Electrónico" required>
+            <input type="text" id="cedula" placeholder="Cédula" required>
+            <input type="text" id="usuario" placeholder="Usuario (nombre de usuario)" required>
             <input type="password" id="password" placeholder="Contraseña" required>
+            <select id="rol" required>
+                <option value="">Seleccionar Rol</option>
+                <option value="MESERO">Mesero</option>
+                <option value="COCINA">Cocinero</option>
+            </select>
             <button type="submit" class="btn">Registrarse</button>
         </form>
         <p class="msg" id="msg"></p>
+        <div class="back-link">
+            <a href="login.html">← Volver al login</a>
+        </div>
     </div>
 
     <script>
@@ -92,9 +128,14 @@
             event.preventDefault();
             msg.innerText = '';
             const nombre = document.getElementById('nombre').value.trim();
-            const email = document.getElementById('email').value.trim();
+            const cedula = document.getElementById('cedula').value.trim();
+            const usuario = document.getElementById('usuario').value.trim();
             const password = document.getElementById('password').value;
-            if (!nombre || !email || !password) return msg.innerText = 'Completa todos los campos';
+            const rol = document.getElementById('rol').value;
+            if (!nombre || !cedula || !usuario || !password || !rol) {
+                msg.style.color = 'crimson';
+                return msg.innerText = 'Completa todos los campos';
+            }
             const btn = form.querySelector('button[type="submit"]');
             btn.disabled = true;
             btn.innerText = 'Registrando...';
@@ -102,7 +143,7 @@
                 const res = await fetch('/api/register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nombre, usuario: email, password })
+                    body: JSON.stringify({ nombre, cedula, usuario, password, rol })
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Error en el registro');
@@ -120,3 +161,5 @@
         });
     </script>
 
+</body>
+</html>

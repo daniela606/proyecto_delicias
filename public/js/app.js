@@ -10,12 +10,22 @@ if(document.getElementById('btnLogin')){
   document.getElementById('btnLogin').onclick = async ()=>{
     const usuario = document.getElementById('usuario').value;
     const password = document.getElementById('password').value;
+    const rol = typeof rolSeleccionado !== 'undefined' ? rolSeleccionado : document.getElementById('rol')?.value;
+    if(!usuario || !password || !rol){
+      document.getElementById('msg').innerText = 'Completa todos los campos';
+      return;
+    }
     try{
-      const u = await api('/login',{method:'POST',body:JSON.stringify({usuario,password})});
+      const u = await api('/login',{method:'POST',body:JSON.stringify({usuario,password,rol})});
       localStorage.setItem('user', JSON.stringify(u));
-      location.href = 'mesas.html';
+      // Redirigir según el rol
+      if (u.rol === 'COCINA') {
+        location.href = 'cocina.html';
+      } else {
+        location.href = 'mesas.html';
+      }
     }catch(e){
-      document.getElementById('msg').innerText = 'Usuario o contraseña incorrecta';
+      document.getElementById('msg').innerText = 'Usuario, contraseña o rol incorrectos';
     }
   }
 }
@@ -78,8 +88,23 @@ function renderCart(){
     const div = document.createElement('div'); div.className='item';
     // si el item viene de la BD tendrá detalleId
     const detalleId = it.detalleId || it.id || null;
-    div.innerHTML = `<div style="flex:1"><strong>${it.nombre}</strong><div class="small">$${Number(it.precio).toFixed(2)}</div></div>`;
-    const controls = document.createElement('div'); controls.style.display='flex'; controls.style.gap='8px'; controls.style.alignItems='center';
+    const observacion = it.observacion || '';
+    
+    // Crear contenedor para nombre, precio y observación
+    const infoDiv = document.createElement('div'); infoDiv.style.flex='1';
+    infoDiv.innerHTML = `<strong>${it.nombre}</strong><div class="small">$${Number(it.precio).toFixed(2)}</div>`;
+    if(observacion) {
+      const obsSpan = document.createElement('div');
+      obsSpan.style.fontSize = '12px';
+      obsSpan.style.color = '#e74c3c';
+      obsSpan.style.marginTop = '4px';
+      obsSpan.style.fontStyle = 'italic';
+      obsSpan.innerText = '📝 ' + observacion;
+      infoDiv.appendChild(obsSpan);
+    }
+    div.appendChild(infoDiv);
+    
+    const controls = document.createElement('div'); controls.style.display='flex'; controls.style.gap='8px'; controls.style.alignItems='center'; controls.style.flexWrap='wrap';
     const qty = document.createElement('input'); qty.type='number'; qty.min=1; qty.value = it.cantidad; qty.style.width='60px';
     qty.onchange = async ()=>{
       const newQ = Number(qty.value);
@@ -94,7 +119,35 @@ function renderCart(){
       }
       renderCart();
     };
+    
+    // Botón para editar observación
+    const editObsBtn = document.createElement('button');
+    editObsBtn.className='btn';
+    editObsBtn.innerText='📝';
+    editObsBtn.style.fontSize='14px';
+    editObsBtn.style.padding='4px 8px';
+    editObsBtn.style.minWidth='32px';
+    editObsBtn.title='Agregar/editar nota';
+    editObsBtn.onclick = ()=>{
+      const newObs = prompt('Agregar nota (ej: sin cebolla, sin queso):', observacion);
+      if(newObs !== null) {
+        const c = getCart();
+        c[idx].observacion = newObs;
+        saveCart(c);
+        // si tiene detalleId, persistir en servidor
+        if(detalleId){
+          try{
+            api(`/mesa/${localStorage.getItem('currentMesa')}/items/${detalleId}`, {method:'PATCH', body: JSON.stringify({cantidad:c[idx].cantidad, observacion:newObs})})
+              .catch(e=> console.warn('No se pudo actualizar observación en servidor', e.message));
+          }catch(e){}
+        }
+        renderCart();
+      }
+    };
+    
     const delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.innerText='Eliminar';
+    delBtn.style.fontSize='14px';
+    delBtn.style.padding='4px 8px';
     delBtn.onclick = async ()=>{
       if(!confirm('Eliminar item?')) return;
       // eliminar local
@@ -109,7 +162,9 @@ function renderCart(){
       }
       renderCart();
     };
+    
     controls.appendChild(qty);
+    controls.appendChild(editObsBtn);
     controls.appendChild(delBtn);
     div.appendChild(controls);
     itemsEl.appendChild(div);
@@ -132,19 +187,22 @@ function initMenuForMesa(mesa){
     try{
       const resp = await api(`/mesa/${mesa}`);
       if(resp && resp.items && resp.items.length){
+        // Si el carrito local está vacío, cargar desde el servidor
         const local = getCart();
-        // por cada item del servidor, añadir/mergear en local
-        resp.items.forEach(it=>{
-          const idx = local.findIndex(x=>x.id_producto==it.id_producto);
-          const precio = Number(it.precio || 0);
-          if(idx>=0){
-            local[idx].cantidad = Number(local[idx].cantidad) + Number(it.cantidad);
-          } else {
-            local.push({id_producto: it.id_producto, nombre: it.nombre || '', cantidad: it.cantidad, precio: precio, observacion: it.observacion || ''});
-          }
-        });
-        saveCart(local);
-        renderCart();
+        if(local.length === 0){
+          // Carrito vacío: llenar con items del servidor
+          const serverItems = resp.items.map(it=>({
+            id_producto: it.id_producto,
+            nombre: it.nombre || '',
+            cantidad: it.cantidad,
+            precio: Number(it.precio || 0),
+            observacion: it.observacion || '',
+            detalleId: it.id
+          }));
+          saveCart(serverItems);
+          renderCart();
+        }
+        // Si ya hay items locales, no mezclar (evita duplicados)
       }
     }catch(e){
       console.warn('No se pudo sincronizar la mesa:', e.message || e);
@@ -154,13 +212,17 @@ function initMenuForMesa(mesa){
     const user = JSON.parse(localStorage.getItem('user')||'{"id":1}');
     const cart = getCart();
     if(cart.length===0){ alert('Añade productos'); return; }
-    const items = cart.map(i=>({id_producto:i.id_producto,cantidad:i.cantidad,observacion:i.observacion}));
+    const mesa = new URLSearchParams(window.location.search).get('mesa') || localStorage.getItem('currentMesa') || '1';
     try{
-      const resp = await api('/orders',{method:'POST',body:JSON.stringify({id_usuario:user.id, mesa:mesa, observaciones:'', items})});
+      // Solo cambiar el estado del pedido a PREPARANDO
+      const resp = await api(`/mesa/${mesa}/enviar-cocina`, {method:'POST'});
+      console.log('Respuesta enviar-cocina:', resp);
       localStorage.removeItem('cart');
       try{ localStorage.removeItem('currentMesa'); }catch(e){}
-      alert('Pedido enviado id: '+resp.idPedido);
-      location.href='mesas.html';
+      // Esperar un poco antes de redirigir
+      setTimeout(() => {
+        location.href='mesas.html';
+      }, 300);
     }catch(e){
       alert('Error: '+e.message);
     }
@@ -175,12 +237,57 @@ function goToCart(){ location.href = 'mesa.html?mesa=1'; }
   const btn = document.getElementById('btnViewOrder');
   const modal = document.getElementById('orderModal');
   const close = document.getElementById('closeModal');
+  const cancelAllBtn = document.getElementById('cancelAllOrder');
+  const sendToCajaBtn = document.getElementById('sendToCaja');
+  
   if(btn && modal){
     btn.onclick = ()=>{ modal.setAttribute('aria-hidden','false'); renderCart(); };
   }
   if(close && modal){
     close.onclick = ()=>{ modal.setAttribute('aria-hidden','true'); };
   }
+  
+  // Manejador para enviar a caja
+  if(sendToCajaBtn){
+    sendToCajaBtn.onclick = async ()=>{
+      const cart = getCart();
+      if(cart.length===0){ alert('Añade productos'); return; }
+      if(!confirm('¿Enviar este pedido a Caja?')) return;
+      const mesa = new URLSearchParams(window.location.search).get('mesa') || localStorage.getItem('currentMesa') || '1';
+      const items = cart.map(i=>({id_producto:i.id_producto,cantidad:i.cantidad,observacion:i.observacion}));
+      const user = JSON.parse(localStorage.getItem('user')||'{}');
+      try{
+        await api('/pedido/caja', {method:'POST', body: JSON.stringify({id_usuario:user.id, mesa:mesa, observaciones:'', items})});
+        localStorage.removeItem('cart');
+        try{ localStorage.removeItem('currentMesa'); }catch(e){}
+        modal.setAttribute('aria-hidden','true');
+        // Limpiar la campanita de notificación para esta mesa
+        sessionStorage.setItem('mesaLiberada', mesa);
+        alert('Pedido enviado a Caja');
+        location.href='mesas.html';
+      }catch(e){
+        alert('Error: '+e.message);
+      }
+    };
+  }
+  
+  // Manejador para cancelar todo el pedido
+  if(cancelAllBtn){
+    cancelAllBtn.onclick = async ()=>{
+      if(!confirm('¿Estás seguro de que deseas cancelar TODO el pedido de esta mesa?')) return;
+      try{
+        const mesa = new URLSearchParams(window.location.search).get('mesa') || localStorage.getItem('currentMesa') || '1';
+        await api(`/mesa/${mesa}/pedido`, {method:'DELETE'});
+        localStorage.removeItem('cart');
+        modal.setAttribute('aria-hidden','true');
+        alert('Pedido cancelado completamente');
+        location.href='mesas.html';
+      }catch(e){
+        alert('Error al cancelar pedido: '+e.message);
+      }
+    };
+  }
+  
   // cerrar al hacer click fuera
   window.addEventListener('click', (e)=>{ if(e.target === modal) modal.setAttribute('aria-hidden','true'); });
   // cerrar con ESC

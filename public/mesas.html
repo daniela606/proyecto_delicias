@@ -4,34 +4,355 @@
   <meta charset="utf-8">
   <title>Mesas</title>
   <link rel="stylesheet" href="css/estilos.css">
+  <style>
+    :root {
+      --orange: #f07a0a;
+      --orange-dark: #d96a00;
+      --white: #fff;
+      --green: #28a745;
+      --green-dark: #218838;
+    }
+    
+    body {
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 30px;
+      background: rgba(0, 0, 0, 0.1);
+      backdrop-filter: blur(10px);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    header h2 {
+      margin: 0;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    
+    header a {
+      text-decoration: none;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      transition: opacity 0.2s;
+    }
+    
+    header a:hover {
+      opacity: 0.8;
+    }
+    
+    .header-inicio {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .header-botones {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .btn-caja {
+      background: var(--green);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.2s;
+      font-size: 14px;
+    }
+    
+    .btn-caja:hover {
+      background: var(--green-dark);
+      transform: translateY(-2px);
+    }
+    
+    .mesas-container {
+      max-width: 1400px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    
+    .mesas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    
+    .mesa {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+    
+    .mesa:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+    }
+    
+    .mesa-img {
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      background: #f5f5f5;
+      padding: 10px;
+    }
+    
+    .mesa-numero {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    
+    .mesa-estado {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      display: inline-block;
+      align-self: center;
+      width: 100%;
+    }
+    
+    .mesa-estado.libre {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .mesa-estado.pendiente {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .mesa button {
+      background: var(--orange);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      transition: background 0.2s;
+      width: 100%;
+      margin-top: auto;
+    }
+    
+    .mesa button:hover {
+      background: var(--orange-dark);
+    }
+    
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+      }
+      
+      .header-inicio {
+        width: 100%;
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .header-botones {
+        width: 100%;
+      }
+      
+      .btn-caja {
+        flex: 1;
+      }
+      
+      .mesas-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 15px;
+      }
+    }
+
+    /* Campanita con contador de platos listos */
+    .mesa-campanita {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6), inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+      animation: pulse 0.8s ease-in-out infinite;
+      cursor: pointer;
+      z-index: 100;
+      border: 3px solid white;
+      flex-direction: column;
+      gap: 3px;
+      font-family: Arial, sans-serif;
+      transition: all 0.3s ease;
+    }
+
+    .mesa-campanita:hover {
+      transform: scale(1.1);
+      box-shadow: 0 8px 24px rgba(40, 167, 69, 0.8), inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1) rotate(0deg);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6), inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+      }
+      50% {
+        transform: scale(1.18) rotate(-8deg);
+        box-shadow: 0 8px 28px rgba(40, 167, 69, 0.8), inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+      }
+        transform: scale(1.2) rotate(5deg);
+        box-shadow: 0 8px 28px rgba(40, 167, 69, 0.8);
+      }
+    }
+
+    .mesa-campanita.hidden {
+      display: none;
+    }
+  </style>
 </head>
-<body class="bg-orange">
-  <header><a href="index.html">← Inicio</a> <h2>MESAS</h2></header>
-  <div class="mesas-grid" id="mesasGrid"></div>
+<body>
+  <header>
+    <div class="header-inicio">
+      <a href="index.html">← Inicio</a>
+      <h2>🍽️ MESAS</h2>
+    </div>
+    <div class="header-botones">
+      <a href="caja.html" class="btn-caja">💰 Caja</a>
+    </div>
+  </header>
+  
+  <div class="mesas-container">
+    <div class="mesas-grid" id="mesasGrid"></div>
+  </div>
 
   <script>
     const grid = document.getElementById('mesasGrid');
+    
+    // Verificar que el usuario esté logueado
+    (function checkUserRole(){
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      // Si NO hay usuario logueado, redirigir a login
+      if (!user.id) {
+        location.href = 'login.html';
+        return;
+      }
+      
+      const btnCocina = document.getElementById('btnCocina');
+      // Mostrar botón de cocina solo si el rol es COCINA
+      if (user.rol === 'COCINA') {
+        btnCocina.style.display = 'inline-block';
+      }
+    })();
+    
     async function loadMesas(){
       try{
         const res = await fetch('/api/mesas');
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
         const mesas = await res.json();
+        if(!Array.isArray(mesas)) throw new Error('Respuesta inválida: no es un array');
         grid.innerHTML = '';
         mesas.forEach(m=>{
           const el = document.createElement('div');
           el.className = 'mesa';
+          el.style.position = 'relative';
+          const estado = m.tienePendiente ? 'Pendiente' : 'Libre';
+          const estadoClass = m.tienePendiente ? 'pendiente' : 'libre';
           el.innerHTML = `
+            <div class="mesa-campanita hidden" id="campanita-${m.id}">🔔</div>
             <img src="imagenes/mesas.png" alt="Mesa ${m.id}" class="mesa-img">
-            <div>MESA ${m.id}</div>
-            <div class="small">${m.tienePendiente? 'Pendiente: $'+Number(m.total).toFixed(2) : 'Libre'}</div>
-            <button onclick="openMesa(${m.id})">Abrir</button>`;
+            <div class="mesa-numero">MESA ${m.id}</div>
+            <div class="mesa-estado ${estadoClass}">${estado}</div>
+            <button onclick="openMesa(${m.id})">Abrir Mesa</button>`;
           grid.appendChild(el);
         });
+        console.log(`Cargadas ${mesas.length} mesas correctamente`);
       }catch(e){
-        grid.innerHTML = '<div>Error cargando mesas</div>';
+        console.error('Error en loadMesas:', e);
+        grid.innerHTML = '<div style="color: white; text-align: center; padding: 20px;">Error cargando mesas: ' + e.message + '</div>';
       }
     }
+
+    async function verificarPlatosListos(){
+      try{
+        const res = await fetch('/api/mesas');
+        if(!res.ok) return;
+        const mesas = await res.json();
+        
+        // Verificar si se liberó una mesa recientemente
+        const mesaLiberada = sessionStorage.getItem('mesaLiberada');
+        if(mesaLiberada){
+          const campanita = document.getElementById(`campanita-${mesaLiberada}`);
+          if(campanita){
+            campanita.classList.add('hidden');
+          }
+          sessionStorage.removeItem('mesaLiberada');
+        }
+        
+        for(const mesa of mesas){
+          // Por cada mesa, verificar si hay productos listos
+          const listoRes = await fetch(`/api/mesa/${mesa.id}/listos`);
+          if(!listoRes.ok) continue;
+          const listoData = await listoRes.json();
+          
+          const campanita = document.getElementById(`campanita-${mesa.id}`);
+          if(!campanita) continue;
+          
+          if(listoData.listos && Array.isArray(listoData.listos) && listoData.listos.length > 0){
+            // Mostrar campanita con contador SOLO si hay productos
+            console.log(`Mesa ${mesa.id}: ${listoData.listos.length} productos listos`);
+            campanita.textContent = `🔔 ${listoData.listos.length}`;
+            campanita.classList.remove('hidden');
+          } else {
+            // Ocultar campanita si no hay platos listos
+            campanita.classList.add('hidden');
+          }
+        }
+      }catch(e){
+        console.warn('Error verificando platosListos:', e);
+      }
+    }
+    
     function openMesa(m){ location.href = `mesa.html?mesa=${m}`; }
+    
+    // Cargar mesas al entrar a la página
+    console.log('Inicializando mesas.html...');
     loadMesas();
+    
+    // Recargar mesas cada 1 segundo para mantener actualizado
+    setInterval(loadMesas, 1000);
+    
+    // Verificar productos listos cada 1 segundo
+    setInterval(verificarPlatosListos, 1000);
   </script>
 </body>
 </html>

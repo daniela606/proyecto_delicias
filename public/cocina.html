@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cocina | Delicias</title>
+  <link rel="stylesheet" href="css/estilos.css">
+  <style>
+    :root {
+      --orange: #f07a0a;
+      --orange-dark: #d96a00;
+      --green: #28a745;
+      --yellow: #ffc107;
+      --red: #ff6b6b;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body {
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+    }
+    
+    header {
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 15px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    header a {
+      font-size: 40px;
+      cursor: pointer;
+      transition: transform 0.2s;
+      text-decoration: none;
+    }
+    
+    header a:hover {
+      transform: scale(1.1);
+    }
+    
+    header h2 {
+      margin: 0;
+      flex: 1;
+      text-align: center;
+      font-size: 32px;
+      letter-spacing: 2px;
+    }
+    
+    .cocina-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 15px;
+      padding: 15px;
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+    
+    .pedido-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      transition: all 0.3s;
+      display: flex;
+      flex-direction: column;
+      border: 4px solid #ccc;
+      min-height: 300px;
+    }
+    
+    .pedido-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .pedido-card.pendiente {
+      border-color: var(--yellow);
+      background: #fffef0;
+    }
+    
+    .pedido-card.preparando {
+      border-color: var(--orange);
+      background: #fffbf5;
+    }
+    
+    .pedido-header {
+      background: linear-gradient(135deg, #333 0%, #1a1a1a 100%);
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 42px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    
+    .estado-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 32px;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    }
+    
+    .pedido-items {
+      padding: 15px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      flex: 1;
+      overflow-y: auto;
+      align-content: start;
+    }
+    
+    .pedido-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      background: #f9f9f9;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      transition: all 0.2s;
+      border: 2px solid #e0e0e0;
+      position: relative;
+    }
+    
+    .pedido-item:hover {
+      background: #f0f0f0;
+      transform: scale(1.04);
+      border-color: var(--orange);
+    }
+    
+    .pedido-item img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      background: white;
+      border-radius: 6px;
+      padding: 3px;
+    }
+    
+    .item-qty {
+      font-size: 20px;
+      font-weight: bold;
+      color: var(--orange);
+      margin: 3px 0;
+    }
+    
+    .item-obs {
+      font-size: 11px;
+      color: #e74c3c;
+      font-weight: bold;
+      background: #ffe6e6;
+      padding: 4px 6px;
+      border-radius: 4px;
+      word-break: break-word;
+      margin-top: 3px;
+      border-left: 3px solid #e74c3c;
+    }
+
+    .btn-listo-item {
+      background: var(--green);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: bold;
+      transition: all 0.2s;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .btn-listo-item:hover {
+      background: #20c997;
+      transform: scale(1.05);
+    }
+    
+    .pedido-botones {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      flex-shrink: 0;
+    }
+    
+    .btn-accion {
+      flex: 1;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      font-size: 32px;
+      transition: all 0.2s;
+      font-weight: bold;
+      background: white;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    }
+    
+    .btn-preparando {
+      background: var(--yellow);
+      color: #333;
+      border: 2px solid #ffb300;
+    }
+    
+    .btn-preparando:hover {
+      background: #ffb300;
+      transform: scale(1.08);
+      box-shadow: 0 4px 12px rgba(255, 179, 0, 0.3);
+    }
+    
+    .btn-listo {
+      background: var(--green);
+      color: white;
+      border: 2px solid #20c997;
+      flex: 2;
+    }
+    
+    .btn-listo:hover {
+      background: #20c997;
+      transform: scale(1.08);
+      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    .sin-pedidos {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 80px 20px;
+      font-size: 80px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    .notificacion-listo {
+      position: fixed;
+      top: 70px;
+      right: 20px;
+      background: linear-gradient(135deg, var(--green), #20c997);
+      color: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      font-size: 32px;
+      font-weight: bold;
+      animation: slideIn 0.5s ease-out;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      z-index: 999;
+      border: 3px solid white;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(500px) rotate(5deg);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0) rotate(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes pulse-large {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .pedido-card.pendiente .pedido-header {
+      animation: pulse-large 2s infinite;
+    }
+    
+    @media (max-width: 768px) {
+      .cocina-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+        padding: 15px;
+      }
+      
+      .pedido-items {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .pedido-header {
+        font-size: 40px;
+      }
+      
+      header h2 {
+        font-size: 40px;
+      }
+      
+      .sin-pedidos {
+        font-size: 80px;
+        padding: 80px 20px;
+      }
+    }
+  </style>
+</head>
+</head>
+<body>
+  <header>
+    <a href="#" onclick="cerrarSesion(); return false;">👈</a>
+    <h2>👨‍🍳</h2>
+    <div style="width: 60px;"></div>
+  </header>
+  
+  <div class="cocina-container" id="cocinaContainer">
+    <div class="sin-pedidos">😎</div>
+  </div>
+
+  <script>
+    // Proteger acceso solo para COCINERO
+    (function checkAuth(){
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.rol !== 'COCINA') {
+        alert('Acceso denegado. Solo cocineros pueden acceder a esta página.');
+        location.href = 'login.html';
+        return;
+      }
+    })();
+    
+    async function loadCocina() {
+      const container = document.getElementById('cocinaContainer');
+      try {
+        const res = await fetch('/api/cocina');
+        const pedidos = await res.json();
+        
+        if (!pedidos || pedidos.length === 0) {
+          container.innerHTML = '<div class="sin-pedidos">😎</div>';
+          return;
+        }
+
+        container.innerHTML = '';
+        
+        // Agrupar detalles por mesa
+        const mesas = {};
+        pedidos.forEach(pedido => {
+          if (!mesas[pedido.mesa]) {
+            mesas[pedido.mesa] = {
+              mesa: pedido.mesa,
+              estado: pedido.estado,
+              items: []
+            };
+          }
+          // Agregar todos los detalles de este pedido
+          mesas[pedido.mesa].items.push(...pedido.items);
+        });
+
+        // Mostrar cada mesa con sus items
+        Object.values(mesas).forEach(mesaData => {
+          const card = document.createElement('div');
+          const estadoClass = mesaData.estado === 'PREPARANDO' ? 'preparando' : 'pendiente';
+          card.className = `pedido-card ${estadoClass}`;
+          card.style.position = 'relative';
+          
+          let itemsHTML = '';
+          mesaData.items.forEach((item) => {
+            const obsNote = item.observacion ? `<div class="item-obs">📝 ${item.observacion}</div>` : '';
+            itemsHTML += `
+              <div class="pedido-item" data-detalle-id="${item.id}">
+                <img src="${item.imagen || 'https://via.placeholder.com/100x100'}" alt="${item.nombre}">
+                <div class="item-qty">${item.cantidad}x</div>
+                ${obsNote}
+                <button class="btn-accion btn-listo-item" onclick="marcarProductoListo(${item.id})">✅</button>
+              </div>
+            `;
+          });
+
+          let estadoBadge = '';
+          if (mesaData.estado === 'PENDIENTE') {
+            estadoBadge = '<div class="estado-badge">⏳</div>';
+          } else if (mesaData.estado === 'PREPARANDO') {
+            estadoBadge = '<div class="estado-badge">🍳</div>';
+          }
+
+          card.innerHTML = `
+            ${estadoBadge}
+            <div class="pedido-header">🍽️ ${mesaData.mesa}</div>
+            <div class="pedido-items">${itemsHTML}</div>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        container.innerHTML = `<div class="sin-pedidos">❌</div>`;
+        console.error(err);
+      }
+    }
+
+    async function marcarProductoListo(detalleId) {
+      try {
+        // Marcar este detalle como listo
+        await fetch(`/api/detalle/${detalleId}/listo`, {method: 'POST'});
+        // Recargar sin esperar respuesta
+        loadCocina();
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    function mostrarNotificacion(mesa) {
+      const notif = document.createElement('div');
+      notif.className = 'notificacion-listo';
+      notif.innerHTML = `MESA ${mesa} ☝️`;
+      document.body.appendChild(notif);
+      setTimeout(() => {
+        notif.remove();
+      }, 5000);
+    }
+    
+    function cerrarSesion() {
+      localStorage.removeItem('user');
+      location.href = 'login.html';
+    }
+
+    // Cargar cocina al inicio y cada 1 segundo para ver cambios rápidamente
+    loadCocina();
+    setInterval(loadCocina, 1000);
+  </script>
+</body>
+</html>

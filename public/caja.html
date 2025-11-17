@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caja | Delicias</title>
+  <link rel="stylesheet" href="css/estilos.css">
+  <style>
+    body {
+      background: #f5f5f5;
+    }
+    header {
+      background: #ff6b2d;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+    header a {
+      color: white;
+      text-decoration: none;
+      float: left;
+      font-size: 18px;
+    }
+    .caja-container {
+      padding: 15px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+    }
+    .recibo {
+      background: white;
+      border: 1px solid #ddd;
+      padding: 12px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+    }
+    .recibo-header {
+      text-align: center;
+      border-bottom: 1px dashed #999;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+      font-weight: bold;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+    .recibo-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .recibo-item-name {
+      flex: 1;
+      text-align: left;
+    }
+    .recibo-item-price {
+      text-align: right;
+      margin-left: 8px;
+    }
+    .recibo-total {
+      border-top: 1px dashed #999;
+      border-bottom: 1px solid #999;
+      padding: 6px 0;
+      margin: 6px 0;
+      font-size: 13px;
+      font-weight: bold;
+      text-align: right;
+    }
+    .recibo-total span {
+      color: #ff6b2d;
+    }
+    .recibo-botones {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .recibo-botones button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    .btn-cobrar {
+      background: #28a745;
+      color: white;
+    }
+    .btn-cobrar:hover {
+      background: #218838;
+      transform: scale(1.02);
+    }
+    .btn-cancelar {
+      background: #dc3545;
+      color: white;
+    }
+    .btn-cancelar:hover {
+      background: #c82333;
+      transform: scale(1.02);
+    }
+    .sin-pedidos {
+      text-align: center;
+      padding: 40px;
+      font-size: 16px;
+      color: #999;
+      grid-column: 1 / -1;
+    }
+    .recibo-mesero {
+      font-size: 11px;
+      color: #888;
+      margin-top: 6px;
+      border-top: 1px solid #f0f0f0;
+      padding-top: 6px;
+    }
+    
+    .resumen-ventas {
+      background: white;
+      border: 2px solid #ff6b2d;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .resumen-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .resumen-header h3 {
+      margin: 0;
+      color: #ff6b2d;
+      font-size: 18px;
+    }
+    
+    .resumen-header button {
+      background: #ff6b2d;
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    
+    .resumen-header button:hover {
+      background: #e55a1d;
+      transform: scale(1.05);
+    }
+    
+    .venta-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+    
+    .venta-item:last-child {
+      border-bottom: none;
+    }
+    
+    .venta-mesa {
+      font-weight: 500;
+      color: #333;
+    }
+    
+    .venta-total {
+      color: #ff6b2d;
+      font-weight: bold;
+    }
+    
+    .resumen-total {
+      background: #f0f0f0;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .resumen-total-valor {
+      color: #ff6b2d;
+      font-size: 20px;
+    }
+    
+    .btn-eliminar-venta {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all 0.2s;
+    }
+    
+    .btn-eliminar-venta:hover {
+      background: #c82333;
+    }
+  </style>
+</head>
+<body class="bg-orange">
+  <header>
+    <a href="mesas.html">← Volver</a>
+    <h2>CAJA</h2>
+  </header>
+  
+  <!-- Pedidos por Cobrar (Arriba) -->
+  <div style="padding: 10px 0;">
+    <h3 style="text-align: center; color: #fff; margin: 10px 0; font-size: 16px;">📋 Pedidos por Cobrar</h3>
+  </div>
+  <div class="caja-container" id="cajasContainer">
+    <div class="sin-pedidos">Cargando pedidos...</div>
+  </div>
+  
+  <!-- Separador -->
+  <div style="border-top: 3px solid rgba(255,255,255,0.3); margin: 20px 0;"></div>
+  
+  <!-- Resumen de Ventas del Día (Abajo) -->
+  <div class="resumen-ventas">
+    <div class="resumen-header">
+      <h3>📊 Ventas del Día</h3>
+      <button onclick="limpiarResumenVentas()">🗑️ Limpiar</button>
+    </div>
+    <div id="resumenVentasContainer">
+      <p style="text-align: center; color: #999;">Sin ventas cobradas aún</p>
+    </div>
+  </div>
+
+  <script>
+    // Funciones para gestionar el resumen de ventas en localStorage
+    function cargarVentasDelDia() {
+      const ventasJSON = localStorage.getItem('ventasDelDia');
+      return ventasJSON ? JSON.parse(ventasJSON) : [];
+    }
+    
+    function guardarVentasDelDia(ventas) {
+      localStorage.setItem('ventasDelDia', JSON.stringify(ventas));
+      actualizarResumenVentas();
+    }
+    
+    function agregarVenta(mesa, total) {
+      const ventas = cargarVentasDelDia();
+      ventas.push({
+        id: Date.now(),
+        mesa: mesa,
+        total: total,
+        fecha: new Date().toLocaleString('es-CO')
+      });
+      guardarVentasDelDia(ventas);
+    }
+    
+    function eliminarVenta(ventaId) {
+      let ventas = cargarVentasDelDia();
+      ventas = ventas.filter(v => v.id !== ventaId);
+      guardarVentasDelDia(ventas);
+    }
+    
+    function limpiarResumenVentas() {
+      if (!confirm('¿Descartar todas las ventas del día? Esta acción no se puede deshacer.')) return;
+      localStorage.removeItem('ventasDelDia');
+      actualizarResumenVentas();
+    }
+    
+    function actualizarResumenVentas() {
+      const ventas = cargarVentasDelDia();
+      const container = document.getElementById('resumenVentasContainer');
+      
+      if (ventas.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #999;">Sin ventas cobradas aún</p>';
+        return;
+      }
+      
+      let html = '';
+      let totalDia = 0;
+      
+      ventas.forEach(venta => {
+        html += `
+          <div class="venta-item">
+            <span class="venta-mesa">Mesa ${venta.mesa} - ${venta.fecha}</span>
+            <div>
+              <span class="venta-total">$${Number(venta.total).toLocaleString('es-CO')}</span>
+              <button class="btn-eliminar-venta" onclick="eliminarVenta(${venta.id})">Eliminar</button>
+            </div>
+          </div>
+        `;
+        totalDia += Number(venta.total);
+      });
+      
+      html += `
+        <div class="resumen-total">
+          <span>TOTAL DEL DÍA:</span>
+          <span class="resumen-total-valor">$${Number(totalDia).toLocaleString('es-CO')}</span>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+    }
+    
+    async function loadCaja() {
+      const container = document.getElementById('cajasContainer');
+      try {
+        const res = await fetch('/api/caja');
+        const pedidos = await res.json();
+        
+        if (!pedidos || pedidos.length === 0) {
+          container.innerHTML = '<div class="sin-pedidos">No hay pedidos pendientes de cobro</div>';
+          return;
+        }
+
+        container.innerHTML = '';
+        pedidos.forEach(pedido => {
+          const recibo = document.createElement('div');
+          recibo.className = 'recibo';
+          
+          let itemsHTML = '';
+          pedido.items.forEach(item => {
+            itemsHTML += `
+              <div class="recibo-item">
+                <span class="recibo-item-qty">${item.cantidad}x ${item.nombre}</span>
+                <span class="recibo-item-price">$${Number(item.subtotal).toLocaleString('es-CO')}</span>
+              </div>
+            `;
+          });
+
+          recibo.innerHTML = `
+            <div class="recibo-header">MESA ${pedido.mesa}</div>
+            ${itemsHTML}
+            <div class="recibo-total">
+              TOTAL: <span>$${Number(pedido.total).toLocaleString('es-CO')}</span>
+            </div>
+            <div class="recibo-mesero">${pedido.nombreMesero || 'N/A'}</div>
+            <div class="recibo-botones">
+              <button class="btn-cobrar" onclick="cobrarPedido(${pedido.id}, ${pedido.mesa}, ${pedido.total})">Cobrado</button>
+              <button class="btn-cancelar" onclick="cancelarPedido(${pedido.id})">Cancelar</button>
+            </div>
+          `;
+          container.appendChild(recibo);
+        });
+      } catch (err) {
+        container.innerHTML = `<div class="sin-pedidos">Error: ${err.message}</div>`;
+      }
+    }
+
+    async function cobrarPedido(idPedido, mesa, total) {
+      if (!confirm('¿Marcar pedido como cobrado?')) return;
+      try {
+        // 1. Marcar como cobrado
+        const resCobo = await fetch(`/api/pedido/${idPedido}/cobrar`, {method: 'POST'});
+        if (!resCobo.ok) throw new Error('Error al marcar como cobrado');
+        console.log('Pedido marcado como cobrado:', idPedido);
+        
+        // 2. Agregar a ventas del día
+        agregarVenta(mesa, total);
+        
+        // 3. Pausa para asegurar que se guardó el estado en BD
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // 4. Limpiar la mesa completamente (eliminar pedido)
+        try {
+          const resLimpiar = await fetch(`/api/mesa/${mesa}/pedido`, {method: 'DELETE'});
+          if (!resLimpiar.ok) {
+            const errMsg = await resLimpiar.text();
+            console.error('Error limpiando mesa:', errMsg);
+            throw new Error('Error al limpiar mesa: ' + errMsg);
+          }
+          console.log('Mesa limpiada exitosamente:', mesa);
+        } catch (e) {
+          console.error('Error en DELETE:', e.message);
+        }
+        
+        // 5. Recargar vista inmediatamente
+        await new Promise(resolve => setTimeout(resolve, 200));
+        loadCaja();
+      } catch (err) {
+        alert('Error: ' + err.message);
+        console.error('Error completo:', err);
+      }
+    }
+
+    async function cancelarPedido(idPedido) {
+      if (!confirm('¿Cancelar este pedido?')) return;
+      try {
+        await fetch(`/api/pedido/${idPedido}/cancelar`, {method: 'POST'});
+        loadCaja();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // Cargar caja al inicio y cada 2 segundos
+    actualizarResumenVentas();
+    loadCaja();
+    setInterval(loadCaja, 2000);
+  </script>
+</body>
+</html>

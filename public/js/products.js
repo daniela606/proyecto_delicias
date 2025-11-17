@@ -6,14 +6,39 @@ async function loadAdminProducts(){
   try{
     const prods = await api('/products');
     container.innerHTML = '';
+    if(prods.length === 0){
+      container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #999;">No hay productos registrados aún</p>';
+      return;
+    }
     prods.forEach(p=>{
       const div = document.createElement('div');
-      div.className='producto';
-      div.innerHTML = `<img src="${p.imagen||'https://via.placeholder.com/200x100'}"><h4>${p.nombre}</h4><div>$ ${Number(p.precio).toFixed(2)}</div><div class="small">${p.descripcion||''}</div>`;
+      div.className = 'producto-card';
+      div.innerHTML = `
+        <img src="${p.imagen || 'https://via.placeholder.com/200x100'}" alt="${p.nombre}" class="producto-img">
+        <div class="producto-info">
+          <div class="producto-nombre">${p.nombre}</div>
+          <div class="producto-precio">$${Number(p.precio).toFixed(2)}</div>
+          <div class="producto-desc">${p.descripcion || 'Sin descripción'}</div>
+          <div class="producto-actions">
+            <button class="btn-delete" onclick="deleteProduct(${p.id})">🗑️ Eliminar</button>
+          </div>
+        </div>
+      `;
       container.appendChild(div);
     });
   }catch(e){
-    container.innerText = 'Error cargando productos: '+e.message;
+    container.innerText = 'Error cargando productos: ' + e.message;
+  }
+}
+
+async function deleteProduct(id){
+  if(!confirm('¿Eliminar este producto?')) return;
+  try{
+    await api(`/products/${id}`, {method: 'DELETE'});
+    await loadAdminProducts();
+    alert('Producto eliminado');
+  }catch(e){
+    alert('Error: ' + e.message);
   }
 }
 
@@ -31,9 +56,10 @@ if(document.getElementById('formAdd')){
       await api('/products',{method:'POST', body: JSON.stringify({nombre,precio,imagen,descripcion})});
       document.getElementById('formAdd').reset();
       await loadAdminProducts();
-      alert('Producto agregado');
+      alert('Producto agregado correctamente');
     }catch(e){
       alert('Error: '+e.message);
     }
   }
 }
+

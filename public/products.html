@@ -4,27 +4,280 @@
   <meta charset="utf-8">
   <title>Admin - Productos</title>
   <link rel="stylesheet" href="css/estilos.css">
+  <style>
+    :root {
+      --orange: #f07a0a;
+      --orange-dark: #d96a00;
+      --white: #fff;
+    }
+    
+    body {
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+      min-height: 100vh;
+      padding: 20px;
+      margin: 0;
+    }
+    
+    header {
+      background: var(--orange);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+    
+    header a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    
+    header a:hover {
+      text-decoration: underline;
+    }
+    
+    header h2 {
+      margin: 10px 0 0 0;
+      font-size: 28px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .form-section {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+      margin-bottom: 40px;
+    }
+    
+    .form-section h3 {
+      color: var(--orange);
+      margin-top: 0;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    #formAdd {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    
+    #formAdd label {
+      display: flex;
+      flex-direction: column;
+      font-weight: 500;
+      color: #555;
+    }
+    
+    #formAdd label span {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: var(--orange);
+      font-weight: 600;
+    }
+    
+    #formAdd input,
+    #formAdd textarea {
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.3s;
+    }
+    
+    #formAdd input:focus,
+    #formAdd textarea:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(240, 122, 10, 0.1);
+    }
+    
+    #formAdd textarea {
+      grid-column: 1 / 2;
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    #formAdd button {
+      grid-column: 2 / 3;
+      grid-row: 4 / 5;
+      background: var(--orange);
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+      height: fit-content;
+    }
+    
+    #formAdd button:hover {
+      background: var(--orange-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(240, 122, 10, 0.3);
+    }
+    
+    .listado-section {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .listado-section h3 {
+      color: var(--orange);
+      font-size: 24px;
+      margin-top: 0;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    #listado {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    
+    .producto-card {
+      background: #f9f9f9;
+      border: 2px solid #f0f0f0;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .producto-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(240, 122, 10, 0.2);
+      border-color: var(--orange);
+    }
+    
+    .producto-img {
+      width: 100%;
+      height: 200px;
+      object-fit: contain;
+      background: #f0f0f0;
+      padding: 10px;
+    }
+    
+    .producto-info {
+      padding: 15px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .producto-nombre {
+      font-weight: bold;
+      color: #333;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+    
+    .producto-precio {
+      color: var(--orange);
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    
+    .producto-desc {
+      color: #777;
+      font-size: 13px;
+      margin-bottom: 12px;
+      flex: 1;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    
+    .producto-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .btn-delete {
+      flex: 1;
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    
+    .btn-delete:hover {
+      background: #ff5252;
+    }
+    
+    @media (max-width: 768px) {
+      #formAdd {
+        grid-template-columns: 1fr;
+      }
+      
+      #formAdd button {
+        grid-column: 1 / 2;
+      }
+      
+      #listado {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-<body class="bg-orange">
-  <header><a href="index.html">← Inicio</a> <h2>Productos (Admin)</h2></header>
+<body>
+  <header>
+    <a href="index.html">← Inicio</a>
+    <h2>Administrador de Productos</h2>
+  </header>
 
-  <section class="center">
-    <h3>Agregar producto</h3>
-    <form id="formAdd">
-      <label>Nombre<br><input type="text" id="nombre" required></label><br>
-      <label>Precio<br><input type="number" step="0.01" id="precio" required></label><br>
-      <label>Imagen (URL)<br><input type="text" id="imagen"></label><br>
-      <label>Descripción<br><textarea id="descripcion"></textarea></label><br>
-      <button type="submit" class="btn">Agregar</button>
-    </form>
-  </section>
+  <div class="container">
+    <section class="form-section">
+      <h3>➕ Agregar Nuevo Producto</h3>
+      <form id="formAdd">
+        <label>
+          <span>Nombre del producto</span>
+          <input type="text" id="nombre" placeholder="Ej: Bandeja Paisa" required>
+        </label>
+        <label>
+          <span>Precio ($)</span>
+          <input type="number" step="0.01" id="precio" placeholder="Ej: 25000" required>
+        </label>
+        <label>
+          <span>URL de imagen</span>
+          <input type="text" id="imagen" placeholder="https://ejemplo.com/imagen.jpg">
+        </label>
+        <label>
+          <span>Descripción</span>
+          <textarea id="descripcion" placeholder="Describe el producto..."></textarea>
+        </label>
+        <button type="submit">Agregar Producto</button>
+      </form>
+    </section>
 
-  <hr>
-
-  <section>
-    <h3>Listado de productos</h3>
-    <div id="listado" class="productos-grid"></div>
-  </section>
+    <section class="listado-section">
+      <h3>📦 Productos Registrados</h3>
+      <div id="listado"></div>
+    </section>
+  </div>
 
   <script src="js/app.js"></script>
   <script src="js/products.js"></script>

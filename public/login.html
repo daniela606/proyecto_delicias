@@ -5,9 +5,14 @@
   <title>Iniciar Sesión | Delicias</title>
   <link rel="stylesheet" href="css/estilos.css">
   <style>
+    :root {
+      --orange: #f07a0a;
+      --orange-dark: #d96a00;
+    }
+
     body {
       font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #ff9f43, #ff6b6b);
+      background: linear-gradient(135deg, var(--orange), var(--orange-dark));
       height: 100vh;
       margin: 0;
       display: flex;
@@ -33,12 +38,12 @@
 
     h2 {
       margin-bottom: 25px;
-      color: #ff6b2d;
+      color: var(--orange);
       font-size: 1.6rem;
       letter-spacing: 1px;
     }
 
-    input {
+    input, select {
       width: 100%;
       padding: 12px;
       margin: 10px 0;
@@ -47,15 +52,16 @@
       outline: none;
       font-size: 0.95rem;
       transition: all 0.2s ease;
+      box-sizing: border-box;
     }
 
-    input:focus {
-      border-color: #ff6b2d;
-      box-shadow: 0 0 5px rgba(255, 107, 45, 0.3);
+    input:focus, select:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 5px rgba(240, 122, 10, 0.3);
     }
 
     .btn {
-      background: #ff6b2d;
+      background: var(--orange);
       color: #fff;
       border: none;
       padding: 12px;
@@ -65,10 +71,22 @@
       font-size: 1rem;
       cursor: pointer;
       transition: background 0.3s;
+      font-weight: bold;
     }
 
     .btn:hover {
-      background: #ff8533;
+      background: var(--orange-dark);
+    }
+
+    .btn-register {
+      background: #fff;
+      color: var(--orange);
+      border: 2px solid var(--orange);
+      margin-top: 10px;
+    }
+
+    .btn-register:hover {
+      background: #f5f5f5;
     }
 
     .msg {
@@ -76,6 +94,63 @@
       color: #d9534f;
       font-size: 0.9rem;
       min-height: 20px;
+    }
+
+    .form-section {
+      display: none;
+    }
+
+    .form-section.active {
+      display: block;
+    }
+
+    .rol-selector {
+      display: flex;
+      gap: 15px;
+      margin: 20px 0;
+      justify-content: center;
+    }
+
+    .rol-option {
+      flex: 1;
+      background: white;
+      border: 3px solid #ddd;
+      border-radius: 12px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .rol-option:hover {
+      border-color: var(--orange);
+      background: #fff9f0;
+      transform: scale(1.05);
+    }
+
+    .rol-option.selected {
+      border-color: var(--orange);
+      background: var(--orange);
+      color: white;
+      box-shadow: 0 6px 15px rgba(240, 122, 10, 0.4);
+    }
+
+    .rol-emoji {
+      font-size: 50px;
+      margin-bottom: 8px;
+    }
+
+    .rol-label {
+      font-size: 16px;
+      font-weight: bold;
     }
 
     @media (max-width: 400px) {
@@ -87,19 +162,112 @@
 </head>
 <body>
   <div class="card">
-    <h2>Iniciar Sesión</h2>
-    <input id="usuario" placeholder="Usuario" autocomplete="off">
-    <input id="password" type="password" placeholder="Contraseña">
-    <button id="btnLogin" class="btn">Entrar</button>
-    <button id="btnRegister" class="btn" style="background:#fff;color:#ff6b2d;border:2px solid #ff6b2d;margin-top:10px;">Registrarse</button>
+    <h2 id="titulo">👤 Iniciar Sesión</h2>
+    
+    <!-- Selector visual de rol -->
+    <div class="rol-selector">
+      <div class="rol-option" data-rol="MESERO" onclick="selectRol('MESERO')">
+        <div class="rol-emoji">🤵🏻</div>
+        <div class="rol-label">Mesero</div>
+      </div>
+      <div class="rol-option" data-rol="COCINA" onclick="selectRol('COCINA')">
+        <div class="rol-emoji">👨‍🍳</div>
+        <div class="rol-label">Chef</div>
+      </div>
+    </div>
+    
+    <!-- Formulario MESERO -->
+    <div id="formMesero" class="form-section active">
+      <input id="usuario" placeholder="Usuario" autocomplete="off">
+      <input id="password" type="password" placeholder="Contraseña">
+      <button id="btnLogin" class="btn">Entrar</button>
+      <button id="btnRegister" class="btn btn-register">📝 Registrarse</button>
+    </div>
+
+    <!-- Acceso COCINA (con credenciales) -->
+    <div id="formCocina" class="form-section">
+      <input id="usuarioChef" placeholder="Usuario" autocomplete="off">
+      <input id="passwordChef" type="password" placeholder="Contraseña">
+      <button id="btnLoginChef" class="btn" style="background: #ff9800;">Entrar</button>
+      <button id="btnRegisterChef" class="btn btn-register">📝 Registrarse como Chef</button>
+    </div>
+
     <p id="msg" class="msg"></p>
   </div>
 
   <script src="js/app.js"></script>
   <script>
-    // Botón para ir a la página de registro
-    const regBtn = document.getElementById('btnRegister');
-    if(regBtn) regBtn.onclick = () => { window.location.href = '/registro.html'; };
+    let rolSeleccionado = null;
+    const formMesero = document.getElementById('formMesero');
+    const formCocina = document.getElementById('formCocina');
+    const btnRegister = document.getElementById('btnRegister');
+    const btnLogin = document.getElementById('btnLogin');
+    const btnLoginChef = document.getElementById('btnLoginChef');
+    const btnRegisterChef = document.getElementById('btnRegisterChef');
+    const titulo = document.getElementById('titulo');
+
+    function selectRol(rol) {
+      rolSeleccionado = rol;
+      
+      // Actualizar estilos de opciones
+      document.querySelectorAll('.rol-option').forEach(option => {
+        option.classList.remove('selected');
+      });
+      document.querySelector(`[data-rol="${rol}"]`).classList.add('selected');
+
+      // Mostrar formulario correspondiente
+      if(rol === 'COCINA') {
+        formMesero.classList.remove('active');
+        formCocina.classList.add('active');
+        titulo.innerText = '👨‍🍳 Chef';
+      } else if(rol === 'MESERO') {
+        formCocina.classList.remove('active');
+        formMesero.classList.add('active');
+        titulo.innerText = '🧑‍💼 Mesero';
+      }
+    }
+
+    // Login para Chef
+    btnLoginChef.addEventListener('click', async function() {
+      const usuario = document.getElementById('usuarioChef').value;
+      const password = document.getElementById('passwordChef').value;
+      const rol = 'COCINA';
+      if(!usuario || !password || !rol){
+        document.getElementById('msg').innerText = 'Completa todos los campos';
+        return;
+      }
+      try{
+        const u = await fetch('/api/login', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({usuario, password, rol})
+        }).then(r => r.json());
+        localStorage.setItem('user', JSON.stringify(u));
+        location.href = 'cocina.html';
+      }catch(e){
+        document.getElementById('msg').innerText = 'Usuario, contraseña o rol incorrectos';
+      }
+    });
+
+    // Botón para registrarse como Chef
+    if(btnRegisterChef) btnRegisterChef.onclick = () => { window.location.href = '/registro.html'; };
+
+    // Botón para ir a la página de registro (Mesero)
+    if(btnRegister) btnRegister.onclick = () => { window.location.href = '/registro.html'; };
+
+    // Hacer que el botón de login funcione cuando el usuario presione ENTER
+    document.getElementById('usuario').addEventListener('keypress', function(e) {
+      if(e.key === 'Enter') btnLogin.click();
+    });
+    document.getElementById('password').addEventListener('keypress', function(e) {
+      if(e.key === 'Enter') btnLogin.click();
+    });
+    document.getElementById('usuarioChef').addEventListener('keypress', function(e) {
+      if(e.key === 'Enter') btnLoginChef.click();
+    });
+    document.getElementById('passwordChef').addEventListener('keypress', function(e) {
+      if(e.key === 'Enter') btnLoginChef.click();
+    });
   </script>
 </body>
 </html>
