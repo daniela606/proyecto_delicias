@@ -292,11 +292,13 @@
         console.log('Mesas recibidas:', mesas);
         if(!Array.isArray(mesas)) throw new Error('Respuesta inválida: no es un array');
         
-        // Verificar si es la primera carga
-        const isFirstLoad = gridElement.children.length === 0;
+        // Verificar cuántas mesas existen en el DOM
+        const mesasEnDOM = document.querySelectorAll('[id^="mesa-"]').length;
+        console.log(`Mesas en DOM: ${mesasEnDOM}, esperadas: ${mesas.length}`);
         
-        if (isFirstLoad) {
-          // Primera carga: crear todas las mesas
+        // Si no hay mesas en el DOM o el número no coincide, recrear
+        if (mesasEnDOM === 0 || mesasEnDOM !== mesas.length) {
+          console.log('Reconstruyendo mesas - no coincide el número');
           gridElement.innerHTML = '';
           mesas.forEach(m=>{
             const el = document.createElement('div');
@@ -313,9 +315,10 @@
               <button onclick="openMesa(${m.id})">Abrir Mesa</button>`;
             gridElement.appendChild(el);
           });
-          console.log(`✅ Cargadas ${mesas.length} mesas correctamente (primera carga)`);
+          console.log(`✅ Cargadas ${mesas.length} mesas correctamente`);
         } else {
-          // Cargas subsecuentes: actualizar solo el estado de cada mesa
+          // Todas las mesas existen, solo actualizar estados
+          console.log('Actualizando solo estados de mesas');
           mesas.forEach(m=>{
             const mesaEl = document.getElementById(`mesa-${m.id}`);
             if (mesaEl) {
@@ -328,7 +331,7 @@
               }
             }
           });
-          console.log(`✅ Estados actualizados para ${mesas.length} mesas`);
+          console.log(`✅ Estados actualizados`);
         }
       }catch(e){
         console.error('❌ Error en loadMesas:', e);
@@ -385,11 +388,11 @@
     console.log('Inicializando mesas.html...');
     loadMesas();
     
-    // Recargar mesas cada 1 segundo para mantener actualizado
-    setInterval(loadMesas, 1000);
+    // Actualizar solo estados cada 3 segundos (no recrear)
+    setInterval(loadMesas, 3000);
     
-    // Verificar productos listos cada 1 segundo
-    setInterval(verificarPlatosListos, 1000);
+    // Verificar productos listos cada 2 segundos
+    setInterval(verificarPlatosListos, 2000);
   </script>
 </body>
 </html>

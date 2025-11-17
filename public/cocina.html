@@ -345,8 +345,6 @@
           return;
         }
 
-        container.innerHTML = '';
-        
         // Agrupar detalles por mesa
         const mesas = {};
         pedidos.forEach(pedido => {
@@ -361,40 +359,102 @@
           mesas[pedido.mesa].items.push(...pedido.items);
         });
 
-        // Mostrar cada mesa con sus items
-        Object.values(mesas).forEach(mesaData => {
-          const card = document.createElement('div');
-          const estadoClass = mesaData.estado === 'PREPARANDO' ? 'preparando' : 'pendiente';
-          card.className = `pedido-card ${estadoClass}`;
-          card.style.position = 'relative';
-          
-          let itemsHTML = '';
-          mesaData.items.forEach((item) => {
-            const obsNote = item.observacion ? `<div class="item-obs">📝 ${item.observacion}</div>` : '';
-            itemsHTML += `
-              <div class="pedido-item" data-detalle-id="${item.id}">
-                <img src="${item.imagen || 'https://via.placeholder.com/100x100'}" alt="${item.nombre}">
-                <div class="item-qty">${item.cantidad}x</div>
-                ${obsNote}
-                <button class="btn-accion btn-listo-item" onclick="marcarProductoListo(${item.id})">✅</button>
-              </div>
+        // Verificar si es la primera carga
+        const existingCards = container.querySelectorAll('.pedido-card');
+        const needsFullRender = existingCards.length === 0 || existingCards.length !== Object.keys(mesas).length;
+
+        if (needsFullRender) {
+          // Primera carga o cambio en número de mesas: renderizar todo
+          container.innerHTML = '';
+          Object.values(mesas).forEach(mesaData => {
+            const card = document.createElement('div');
+            const estadoClass = mesaData.estado === 'PREPARANDO' ? 'preparando' : 'pendiente';
+            card.className = `pedido-card ${estadoClass}`;
+            card.style.position = 'relative';
+            card.id = `mesa-card-${mesaData.mesa}`;
+            
+            let itemsHTML = '';
+            mesaData.items.forEach((item) => {
+              const obsNote = item.observacion ? `<div class="item-obs">📝 ${item.observacion}</div>` : '';
+              itemsHTML += `
+                <div class="pedido-item" data-detalle-id="${item.id}">
+                  <img src="${item.imagen || 'https://via.placeholder.com/100x100'}" alt="${item.nombre}">
+                  <div class="item-qty">${item.cantidad}x</div>
+                  ${obsNote}
+                  <button class="btn-accion btn-listo-item" onclick="marcarProductoListo(${item.id})">✅</button>
+                </div>
+              `;
+            });
+
+            let estadoBadge = '';
+            if (mesaData.estado === 'PENDIENTE') {
+              estadoBadge = '<div class="estado-badge">⏳</div>';
+            } else if (mesaData.estado === 'PREPARANDO') {
+              estadoBadge = '<div class="estado-badge">🍳</div>';
+            }
+
+            card.innerHTML = `
+              ${estadoBadge}
+              <div class="pedido-header">🍽️ ${mesaData.mesa}</div>
+              <div class="pedido-items">${itemsHTML}</div>
+            `;
+            container.appendChild(card);
+          });
+        } else {
+          // Actualizar solo los elementos existentes
+          Object.values(mesas).forEach(mesaData => {
+            let card = document.getElementById(`mesa-card-${mesaData.mesa}`);
+            
+            if (!card) {
+              // Esta mesa es nueva, crearla
+              card = document.createElement('div');
+              const estadoClass = mesaData.estado === 'PREPARANDO' ? 'preparando' : 'pendiente';
+              card.className = `pedido-card ${estadoClass}`;
+              card.style.position = 'relative';
+              card.id = `mesa-card-${mesaData.mesa}`;
+              container.appendChild(card);
+            }
+
+            // Actualizar estado visual
+            const estadoClass = mesaData.estado === 'PREPARANDO' ? 'preparando' : 'pendiente';
+            card.className = `pedido-card ${estadoClass}`;
+
+            // Actualizar items
+            let itemsHTML = '';
+            mesaData.items.forEach((item) => {
+              const obsNote = item.observacion ? `<div class="item-obs">📝 ${item.observacion}</div>` : '';
+              itemsHTML += `
+                <div class="pedido-item" data-detalle-id="${item.id}">
+                  <img src="${item.imagen || 'https://via.placeholder.com/100x100'}" alt="${item.nombre}">
+                  <div class="item-qty">${item.cantidad}x</div>
+                  ${obsNote}
+                  <button class="btn-accion btn-listo-item" onclick="marcarProductoListo(${item.id})">✅</button>
+                </div>
+              `;
+            });
+
+            let estadoBadge = '';
+            if (mesaData.estado === 'PENDIENTE') {
+              estadoBadge = '<div class="estado-badge">⏳</div>';
+            } else if (mesaData.estado === 'PREPARANDO') {
+              estadoBadge = '<div class="estado-badge">🍳</div>';
+            }
+
+            card.innerHTML = `
+              ${estadoBadge}
+              <div class="pedido-header">🍽️ ${mesaData.mesa}</div>
+              <div class="pedido-items">${itemsHTML}</div>
             `;
           });
 
-          let estadoBadge = '';
-          if (mesaData.estado === 'PENDIENTE') {
-            estadoBadge = '<div class="estado-badge">⏳</div>';
-          } else if (mesaData.estado === 'PREPARANDO') {
-            estadoBadge = '<div class="estado-badge">🍳</div>';
-          }
-
-          card.innerHTML = `
-            ${estadoBadge}
-            <div class="pedido-header">🍽️ ${mesaData.mesa}</div>
-            <div class="pedido-items">${itemsHTML}</div>
-          `;
-          container.appendChild(card);
-        });
+          // Remover mesas que ya no existen
+          existingCards.forEach(card => {
+            const mesaNum = card.id.replace('mesa-card-', '');
+            if (!mesas[mesaNum]) {
+              card.remove();
+            }
+          });
+        }
       } catch (err) {
         container.innerHTML = `<div class="sin-pedidos">❌</div>`;
         console.error(err);
@@ -427,9 +487,9 @@
       location.href = 'login.html';
     }
 
-    // Cargar cocina al inicio y cada 1 segundo para ver cambios rápidamente
+    // Cargar cocina al inicio y cada 2 segundos para ver cambios
     loadCocina();
-    setInterval(loadCocina, 1000);
+    setInterval(loadCocina, 2000);
   </script>
 </body>
 </html>

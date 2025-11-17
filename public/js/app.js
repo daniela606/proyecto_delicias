@@ -66,6 +66,15 @@ function addToCart(id,nombre,precio){
     api(`/mesa/${mesa}/items`, {method:'POST', body: JSON.stringify({id_producto:id, cantidad:q, observacion:'', id_usuario: user.id || null})})
       .then(resp=>{
         console.log('Persistido en mesa', mesa, resp);
+        // Guardar detalleId en el carrito para futuras actualizaciones
+        if(resp && resp.detalleId){
+          const c = getCart();
+          const idx = c.findIndex(x=>x.id_producto==id);
+          if(idx>=0 && !c[idx].detalleId){
+            c[idx].detalleId = resp.detalleId;
+            saveCart(c);
+          }
+        }
       }).catch(err=>{
         console.warn('No se pudo persistir en mesa (se guardó localmente):', err.message);
       });
@@ -128,7 +137,7 @@ function renderCart(){
     editObsBtn.style.padding='4px 8px';
     editObsBtn.style.minWidth='32px';
     editObsBtn.title='Agregar/editar nota';
-    editObsBtn.onclick = ()=>{
+    editObsBtn.onclick = async ()=>{
       const newObs = prompt('Agregar nota (ej: sin cebolla, sin queso):', observacion);
       if(newObs !== null) {
         const c = getCart();
@@ -137,9 +146,11 @@ function renderCart(){
         // si tiene detalleId, persistir en servidor
         if(detalleId){
           try{
-            api(`/mesa/${localStorage.getItem('currentMesa')}/items/${detalleId}`, {method:'PATCH', body: JSON.stringify({cantidad:c[idx].cantidad, observacion:newObs})})
-              .catch(e=> console.warn('No se pudo actualizar observación en servidor', e.message));
-          }catch(e){}
+            await api(`/mesa/${localStorage.getItem('currentMesa')}/items/${detalleId}`, {method:'PATCH', body: JSON.stringify({cantidad:c[idx].cantidad, observacion:newObs})});
+            console.log('Observación actualizada exitosamente');
+          }catch(e){ 
+            console.warn('No se pudo actualizar observación en servidor', e.message);
+          }
         }
         renderCart();
       }
@@ -219,18 +230,27 @@ function initMenuForMesa(mesa){
       btn.disabled = true;
       btn.innerText = 'Enviando a cocina...';
       
-      // Solo cambiar el estado del pedido a PREPARANDO
+      console.log('Enviando pedido a cocina para mesa', mesa);
+      console.log('Carrito:', cart);
+      
+      // Enviar directamente a cocina sin verificar primero
       const resp = await api(`/mesa/${mesa}/enviar-cocina`, {method:'POST'});
       console.log('Respuesta enviar-cocina:', resp);
-      localStorage.removeItem('cart');
-      try{ localStorage.removeItem('currentMesa'); }catch(e){}
       
-      // Esperar un poco para asegurar que se guardó en la BD
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Redirigir a mesas.html
-      window.location.href='mesas.html';
+      if(resp.ok || resp.msg){
+        localStorage.removeItem('cart');
+        try{ localStorage.removeItem('currentMesa'); }catch(e){}
+        
+        // Esperar un poco para asegurar que se guardó en la BD
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Redirigir a mesas.html
+        window.location.href='mesas.html';
+      } else {
+        throw new Error('No se pudo enviar el pedido');
+      }
     }catch(e){
+      console.error('Error en send:', e);
       alert('Error: '+e.message);
       const btn = document.getElementById('send');
       btn.disabled = false;
