@@ -292,26 +292,48 @@
         console.log('Mesas recibidas:', mesas);
         if(!Array.isArray(mesas)) throw new Error('Respuesta inválida: no es un array');
         
-        gridElement.innerHTML = '';
-        mesas.forEach(m=>{
-          const el = document.createElement('div');
-          el.className = 'mesa';
-          el.style.position = 'relative';
-          const estado = m.tienePendiente ? 'Pendiente' : 'Libre';
-          const estadoClass = m.tienePendiente ? 'pendiente' : 'libre';
-          el.innerHTML = `
-            <div class="mesa-campanita hidden" id="campanita-${m.id}">🔔</div>
-            <img src="imagenes/mesas.png" alt="Mesa ${m.id}" class="mesa-img">
-            <div class="mesa-numero">MESA ${m.id}</div>
-            <div class="mesa-estado ${estadoClass}">${estado}</div>
-            <button onclick="openMesa(${m.id})">Abrir Mesa</button>`;
-          gridElement.appendChild(el);
-        });
-        console.log(`✅ Cargadas ${mesas.length} mesas correctamente`);
+        // Verificar si es la primera carga
+        const isFirstLoad = gridElement.children.length === 0;
+        
+        if (isFirstLoad) {
+          // Primera carga: crear todas las mesas
+          gridElement.innerHTML = '';
+          mesas.forEach(m=>{
+            const el = document.createElement('div');
+            el.className = 'mesa';
+            el.style.position = 'relative';
+            el.id = `mesa-${m.id}`;
+            const estado = m.tienePendiente ? 'Pendiente' : 'Libre';
+            const estadoClass = m.tienePendiente ? 'pendiente' : 'libre';
+            el.innerHTML = `
+              <div class="mesa-campanita hidden" id="campanita-${m.id}">🔔</div>
+              <img src="imagenes/mesas.png" alt="Mesa ${m.id}" class="mesa-img">
+              <div class="mesa-numero">MESA ${m.id}</div>
+              <div class="mesa-estado ${estadoClass}">${estado}</div>
+              <button onclick="openMesa(${m.id})">Abrir Mesa</button>`;
+            gridElement.appendChild(el);
+          });
+          console.log(`✅ Cargadas ${mesas.length} mesas correctamente (primera carga)`);
+        } else {
+          // Cargas subsecuentes: actualizar solo el estado de cada mesa
+          mesas.forEach(m=>{
+            const mesaEl = document.getElementById(`mesa-${m.id}`);
+            if (mesaEl) {
+              const estado = m.tienePendiente ? 'Pendiente' : 'Libre';
+              const estadoClass = m.tienePendiente ? 'pendiente' : 'libre';
+              const estadoEl = mesaEl.querySelector('.mesa-estado');
+              if (estadoEl) {
+                estadoEl.textContent = estado;
+                estadoEl.className = `mesa-estado ${estadoClass}`;
+              }
+            }
+          });
+          console.log(`✅ Estados actualizados para ${mesas.length} mesas`);
+        }
       }catch(e){
         console.error('❌ Error en loadMesas:', e);
         const gridElement = document.getElementById('mesasGrid');
-        if (gridElement) {
+        if (gridElement && gridElement.children.length === 0) {
           gridElement.innerHTML = '<div style="color: white; text-align: center; padding: 20px;">Error cargando mesas: ' + e.message + '</div>';
         }
       }
