@@ -292,13 +292,18 @@
         console.log('Mesas recibidas:', mesas);
         if(!Array.isArray(mesas)) throw new Error('Respuesta inválida: no es un array');
         
+        // Siempre debe haber 16 mesas
+        const totalMesasEsperadas = 16;
+        
         // Verificar cuántas mesas existen en el DOM
         const mesasEnDOM = document.querySelectorAll('[id^="mesa-"]').length;
-        console.log(`Mesas en DOM: ${mesasEnDOM}, esperadas: ${mesas.length}`);
+        console.log(`Mesas en DOM: ${mesasEnDOM}, esperadas: ${totalMesasEsperadas}`);
         
-        // Si no hay mesas en el DOM o el número no coincide, recrear
-        if (mesasEnDOM === 0 || mesasEnDOM !== mesas.length) {
-          console.log('Reconstruyendo mesas - no coincide el número');
+        // Si no hay mesas en el DOM, siempre recrear
+        const necesitaRecreacion = mesasEnDOM === 0;
+        
+        if (necesitaRecreacion) {
+          console.log('Reconstruyendo todas las mesas');
           gridElement.innerHTML = '';
           mesas.forEach(m=>{
             const el = document.createElement('div');
@@ -317,19 +322,27 @@
           });
           console.log(`✅ Cargadas ${mesas.length} mesas correctamente`);
         } else {
-          // Todas las mesas existen, solo actualizar estados
-          console.log('Actualizando solo estados de mesas');
+          // Las mesas ya existen, solo actualizar estados
+          console.log('Actualizando estados de mesas existentes');
           mesas.forEach(m=>{
-            const mesaEl = document.getElementById(`mesa-${m.id}`);
-            if (mesaEl) {
-              const estado = m.tienePendiente ? 'Pendiente' : 'Libre';
-              const estadoClass = m.tienePendiente ? 'pendiente' : 'libre';
-              const estadoEl = mesaEl.querySelector('.mesa-estado');
-              if (estadoEl) {
-                estadoEl.textContent = estado;
-                estadoEl.className = `mesa-estado ${estadoClass}`;
-              }
+            let mesaEl = document.getElementById(`mesa-${m.id}`);
+            if (!mesaEl) {
+              // Si falta una mesa, crearla
+              mesaEl = document.createElement('div');
+              mesaEl.className = 'mesa';
+              mesaEl.style.position = 'relative';
+              mesaEl.id = `mesa-${m.id}`;
+              gridElement.appendChild(mesaEl);
             }
+            
+            const estado = m.tienePendiente ? 'Pendiente' : 'Libre';
+            const estadoClass = m.tienePendiente ? 'pendiente' : 'libre';
+            mesaEl.innerHTML = `
+              <div class="mesa-campanita hidden" id="campanita-${m.id}">🔔</div>
+              <img src="imagenes/mesas.png" alt="Mesa ${m.id}" class="mesa-img">
+              <div class="mesa-numero">MESA ${m.id}</div>
+              <div class="mesa-estado ${estadoClass}">${estado}</div>
+              <button onclick="openMesa(${m.id})">Abrir Mesa</button>`;
           });
           console.log(`✅ Estados actualizados`);
         }
